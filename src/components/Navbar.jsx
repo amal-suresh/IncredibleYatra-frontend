@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -18,40 +19,63 @@ const Navbar = () => {
     navigate("/login");
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <nav className="bg-[#191970] text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+    <nav className="bg-[#191970] text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         {/* Logo */}
-        <Link to="/" className="text-xl font-bold tracking-wide text-[#00BFFF]">
-          TourBook
+        <Link
+          to="/"
+          className='text-3xl font-extrabold tracking-wide text-[#00BFFF] [font-family:"Passion_One",cursive]'
+        >
+          IncredibleYatra
         </Link>
 
         {/* Center Menu */}
-        <div className="hidden md:flex gap-6 text-sm font-medium">
-          <Link to="/packages" className="hover:text-[#00BFFF] transition">Packages</Link>
+        <div className="hidden md:flex gap-8 text-[15px] font-medium">
+          <Link
+            to="/packages"
+            className={`transition duration-200 ${
+              isActive("/packages")
+                ? "text-[#00BFFF] border-b-2 border-[#00BFFF]"
+                : "hover:text-[#00BFFF]"
+            }`}
+          >
+            Packages
+          </Link>
         </div>
 
-        {/* Right Side */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Right Side Buttons */}
+        <div className="hidden md:flex items-center gap-6">
           {isLoggedIn ? (
             <>
-              <Link to="/profile" className="flex items-center gap-1 hover:text-[#00BFFF]">
-                <FaUserCircle className="text-lg" />
+              <Link
+                to="/profile"
+                className={`flex items-center gap-1 transition duration-200 ${
+                  isActive("/profile")
+                    ? "text-[#00BFFF] border-b-2 border-[#00BFFF]"
+                    : "hover:text-[#00BFFF]"
+                }`}
+              >
+                <FaUserCircle className="text-xl" />
                 Profile
               </Link>
               <button
                 onClick={handleLogout}
-                className="bg-[#00BFFF] px-3 py-1 rounded hover:bg-[#1E90FF] text-[#0B0C10] font-medium"
+                className="bg-[#00BFFF] hover:bg-[#1E90FF] transition px-4 py-1.5 rounded-full text-black font-semibold"
               >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="hover:text-[#00BFFF]">Login</Link>
+              <Link to="/login" className="hover:text-[#00BFFF] transition">
+                Login
+              </Link>
               <Link
                 to="/register"
-                className="bg-[#00BFFF] px-3 py-1 rounded hover:bg-[#1E90FF] text-[#0B0C10] font-medium"
+                className="bg-[#00BFFF] hover:bg-[#1E90FF] transition px-4 py-1.5 rounded-full text-black font-semibold"
               >
                 Sign Up
               </Link>
@@ -62,26 +86,65 @@ const Navbar = () => {
         {/* Mobile Menu Toggle */}
         <div className="md:hidden">
           <button onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
+            {menuOpen ? <FaTimes size={22} /> : <FaBars size={22} />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden px-4 pb-4 space-y-3">
-          <Link to="/packages" className="block hover:text-[#00BFFF]">Packages</Link>
+        <div className="md:hidden px-4 pb-4 space-y-3 animate-slide-down">
+          <Link
+            to="/packages"
+            className={`block text-sm font-medium ${
+              isActive("/packages")
+                ? "text-[#00BFFF] border-l-4 pl-2 border-[#00BFFF]"
+                : "hover:text-[#00BFFF]"
+            }`}
+            onClick={() => setMenuOpen(false)}
+          >
+            Packages
+          </Link>
+
           {isLoggedIn ? (
             <>
-              <Link to="/profile" className="block hover:text-[#00BFFF]">Profile</Link>
-              <button onClick={handleLogout} className="block text-left w-full hover:text-[#00BFFF]">
+              <Link
+                to="/profile"
+                className={`block text-sm font-medium ${
+                  isActive("/profile")
+                    ? "text-[#00BFFF] border-l-4 pl-2 border-[#00BFFF]"
+                    : "hover:text-[#00BFFF]"
+                }`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Profile
+              </Link>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setMenuOpen(false);
+                }}
+                className="block w-full text-left text-sm font-medium hover:text-[#00BFFF]"
+              >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="block hover:text-[#00BFFF]">Login</Link>
-              <Link to="/register" className="block hover:text-[#00BFFF]">Sign Up</Link>
+              <Link
+                to="/login"
+                className="block text-sm font-medium hover:text-[#00BFFF]"
+                onClick={() => setMenuOpen(false)}
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="block text-sm font-medium hover:text-[#00BFFF]"
+                onClick={() => setMenuOpen(false)}
+              >
+                Sign Up
+              </Link>
             </>
           )}
         </div>

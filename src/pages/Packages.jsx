@@ -1,38 +1,41 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PackageFilters from "../components/PackageFilters";
 import PackageCard from "../components/PackageCard";
-
-
-const dummyPackages = Array.from({ length: 12 }).map((_, i) => ({
-  id: i + 1,
-  title: `Tour Package ${i + 1}`,
-  description:
-    "Explore beautiful destinations with our all-inclusive tour packages.",
-  image:
-    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
-}));
+import { getVisiblePackages } from "../api/apis";
+import toast from "react-hot-toast";
 
 const Packages = () => {
+  const [packages, setPackages] = useState([]);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
   const packagesPerPage = 6;
 
-  // Search + Sort
-  const filteredPackages = dummyPackages
-    .filter((pkg) =>
-      pkg.title.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sort === "asc") return a.title.localeCompare(b.title);
-      if (sort === "desc") return b.title.localeCompare(a.title);
-      return 0;
-    });
+  const fetchPackages = async () => {
+    setLoading(true);
+    try {
+      const res = await getVisiblePackages({
+        search,
+        sort,
+        page: currentPage,
+        limit: packagesPerPage,
+      });
+      setPackages(res.data.data);
+      setTotalPages(res.data.totalPages);
+    } catch (error) {
+      toast.error("Failed to load packages");
+      console.error("API Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const indexOfLast = currentPage * packagesPerPage;
-  const indexOfFirst = indexOfLast - packagesPerPage;
-  const currentPackages = filteredPackages.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredPackages.length / packagesPerPage);
+  useEffect(() => {
+    fetchPackages();
+  }, [search, sort, currentPage]);
 
   return (
     <div className="bg-[#f4f7fb] min-h-screen p-4 sm:p-6 lg:p-10">
@@ -47,16 +50,30 @@ const Packages = () => {
         setSort={setSort}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {currentPackages.map((pkg) => (
-          <PackageCard
-            key={pkg.id}
-            image={pkg.image}
-            title={pkg.title}
-            description={pkg.description}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center text-[#191970] mt-8 font-semibold">
+          Loading packages...
+        </div>
+      ) : packages.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {packages.map((pkg) => (
+            <PackageCard
+              key={pkg._id}
+              id={pkg._id}
+              images={pkg.images}
+              location={pkg.location}
+              duration={pkg.duration}
+              title={pkg.title}
+              description={pkg.description}
+              pricePerPerson={pkg.pricePerPerson}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center text-gray-500 mt-8">
+          No packages found.
+        </div>
+      )}
 
       {/* Pagination */}
       <div className="mt-8 flex justify-center items-center space-x-2">

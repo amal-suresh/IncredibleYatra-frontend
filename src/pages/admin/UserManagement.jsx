@@ -1,43 +1,53 @@
+// src/pages/UserManagement.js
 import React, { useState, useEffect } from "react";
-
-const dummyUsers = Array.from({ length: 23 }, (_, i) => ({
-  id: i + 1,
-  name: `User ${i + 1}`,
-  email: `user${i + 1}@example.com`,
-  isBlocked: false,
-}));
-
-const USERS_PER_PAGE = 5;
+import { getAllUsers, toggleBlockUser } from "../../api/apis";
+import Pagination from "../../components/Pagination";
+import toast from "react-hot-toast";
 
 const UserManagement = () => {
-  const [users, setUsers] = useState(dummyUsers);
+  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  // Filtered users
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const USERS_PER_PAGE = 10;
 
-  const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
-  const currentUsers = filteredUsers.slice(
-    (currentPage - 1) * USERS_PER_PAGE,
-    currentPage * USERS_PER_PAGE
-  );
-
-  const toggleBlock = (id) => {
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === id ? { ...user, isBlocked: !user.isBlocked } : user
-      )
-    );
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const { data } = await getAllUsers(currentPage, USERS_PER_PAGE, searchTerm);
+      setUsers(data.data);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      toast.error("Failed to fetch users");
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(1);
-  }, [searchTerm, totalPages]);
+    fetchUsers();
+  }, [currentPage, searchTerm]);
+
+  const toggleBlock = async (id) => {
+    try {
+      const response = await toggleBlockUser(id);
+      const { isBlocked } = response.data;
+
+      setUsers((prev) =>
+        prev.map((user) =>
+          user._id === id ? { ...user, isBlocked } : user
+        )
+      );
+
+      toast.success(`User has been ${isBlocked ? "blocked" : "unblocked"}`);
+    } catch (err) {
+      toast.error("Failed to toggle user status");
+      console.error("Error toggling block:", err);
+    }
+  };
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-md">
@@ -53,62 +63,57 @@ const UserManagement = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border rounded-xl">
-          <thead className="bg-[#191970] text-white">
-            <tr>
-              <th className="py-2 px-4 text-left">Name</th>
-              <th className="py-2 px-4 text-left">Email</th>
-              <th className="py-2 px-4 text-center">Status</th>
-              <th className="py-2 px-4 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentUsers.map((user) => (
-              <tr key={user.id} className="border-t">
-                <td className="py-2 px-4">{user.name}</td>
-                <td className="py-2 px-4">{user.email}</td>
-                <td className="py-2 px-4 text-center">
-                  {user.isBlocked ? (
-                    <span className="text-red-600 font-medium">Blocked</span>
-                  ) : (
-                    <span className="text-green-600 font-medium">Active</span>
-                  )}
-                </td>
-                <td className="py-2 px-4 text-center">
-                  <button
-                    onClick={() => toggleBlock(user.id)}
-                    className={`px-3 py-1 rounded-lg text-white ${
-                      user.isBlocked
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-red-600 hover:bg-red-700"
-                    }`}
-                  >
-                    {user.isBlocked ? "Unblock" : "Block"}
-                  </button>
-                </td>
+      {loading ? (
+        <div className="text-center py-8">Loading users...</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full border rounded-xl">
+            <thead className="bg-[#191970] text-white">
+              <tr>
+                <th className="py-2 px-4 text-left">Name</th>
+                <th className="py-2 px-4 text-left">Email</th>
+                <th className="py-2 px-4 text-center">Status</th>
+                <th className="py-2 px-4 text-center">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user._id} className="border-t">
+                  <td className="py-2 px-4">{user.name}</td>
+                  <td className="py-2 px-4">{user.email}</td>
+                  <td className="py-2 px-4 text-center">
+                    {user.isBlocked ? (
+                      <span className="text-red-600 font-medium">Blocked</span>
+                    ) : (
+                      <span className="text-green-600 font-medium">Active</span>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 text-center">
+                    <button
+                      onClick={() => toggleBlock(user._id)}
+                      className={`px-3 py-1 rounded-lg text-white ${
+                        user.isBlocked
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-red-600 hover:bg-red-700"
+                      }`}
+                    >
+                      {user.isBlocked ? "Unblock" : "Block"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      {/* Pagination */}
-      <div className="flex justify-center mt-4 gap-2">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrentPage(i + 1)}
-            className={`px-3 py-1 rounded-full border ${
-              currentPage === i + 1
-                ? "bg-[#191970] text-white"
-                : "text-[#191970] border-[#191970]"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
+      {totalPages > 1 && (
+        <Pagination
+          totalPages={totalPages}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
 };

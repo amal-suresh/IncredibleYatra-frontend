@@ -8,7 +8,7 @@ const PackageFilters = ({ search, setSearch, sort, setSort }) => {
       <div className="relative w-full sm:w-1/3">
         <input
           type="text"
-          placeholder="Search packages..."
+          placeholder="Search by location or package title..."
           className="w-full border border-gray-300 rounded-xl py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-[#191970]"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -24,8 +24,8 @@ const PackageFilters = ({ search, setSearch, sort, setSort }) => {
           className="w-full border border-gray-300 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#191970]"
         >
           <option value="">Sort by</option>
-          <option value="asc">A-Z</option>
-          <option value="desc">Z-A</option>
+          <option value="asc">Low to High</option>
+          <option value="desc">High to Low</option>
         </select>
       </div>
     </div>
